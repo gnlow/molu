@@ -1,14 +1,16 @@
-type Ctx<T> = {
-    [k: string]: (str: TemplateStringsArray) => Ctx<T>
-    (str: TemplateStringsArray): T
-}
-interface Elem<T> {
-    addAttribute(key: string | symbol, val: string): (data: T) => T 
+type Ctx<Data, Eval extends Function> = {
+    [k: string]: (str: TemplateStringsArray) => Ctx<Data, Eval>
+} & Eval
+
+interface Elem<Data, Eval extends Function> {
+    addAttribute(key: string | symbol, val: string): (data: Data) => Data
+    eval: (data: Data) => Eval
 }
 
 const ctxGenGen =
-<T>(impl: Elem<T>) => {
-    const f = (data: T): Ctx<T> =>
+<Data, Eval extends Function>
+(impl: Elem<Data, Eval>) => {
+    const f = (data: Data): Ctx<Data, Eval> =>
         new Proxy(
             () => data,
             {
@@ -18,16 +20,20 @@ const ctxGenGen =
                     )
                 }
             },
-        ) as unknown as Ctx<T>
+        ) as unknown as Ctx<Data, Eval>
     return f
 }
-const elemGen = ctxGenGen<Record<string, string>>({
+const elemGen = ctxGenGen<
+    Record<string, string>,
+    () => Record<string, string>
+>({
     addAttribute:
     (k, v) =>
     data => ({
         ...data,
         [k]: v,
-    })
+    }),
+    eval: data => () => data,
 })
 
 export const div = elemGen({})
