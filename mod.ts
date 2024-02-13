@@ -12,7 +12,7 @@ const ctxGenGen =
 (impl: Elem<Data, Eval>) => {
     const f = (data: Data): Ctx<Data, Eval> =>
         new Proxy(
-            () => data,
+            impl.eval(data),
             {
                 get(_target, prop, _reciever) {
                     return ([val]: TemplateStringsArray) => f(
