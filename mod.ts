@@ -9,12 +9,8 @@ interface Elem<T> {
 const ctxGenGen =
 <T>(impl: Elem<T>) => {
     const f = (data: T): Ctx<T> =>
-    {
-        return new Proxy(
-            Object.assign(
-                () => data,
-                data,
-            ) as unknown as Ctx<T>,
+        new Proxy(
+            () => data,
             {
                 get(_target, prop, _reciever) {
                     return ([val]: TemplateStringsArray) => f(
@@ -22,8 +18,7 @@ const ctxGenGen =
                     )
                 }
             },
-        )
-    }
+        ) as unknown as Ctx<T>
     return f
 }
 const elemGen = ctxGenGen<Record<string, string>>({
