@@ -1,14 +1,14 @@
-type Ctx<Data, Eval extends Function> = {
+type Ctx<Data, Eval extends (...args: any) => any> = {
     [k: string]: (str: TemplateStringsArray) => Ctx<Data, Eval>
 } & Eval
 
-interface Elem<Data, Eval extends Function> {
+interface Elem<Data, Eval extends (...args: any) => any> {
     addAttribute(key: string | symbol, val: string): (data: Data) => Data
     eval: (data: Data) => Eval
 }
 
 const ctxGenGen =
-<Data, Eval extends Function>
+<Data, Eval extends (...args: any) => any>
 (impl: Elem<Data, Eval>) => {
     const f = (data: Data): Ctx<Data, Eval> =>
         new Proxy(
