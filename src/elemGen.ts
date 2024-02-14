@@ -15,29 +15,10 @@ type ElemCtx<State extends "attr" | "children"> = {
     [k: string]: (str: TemplateStringsArray) => ElemCtx<State>
 } & ElemEval<State>
 
-type ElemEvalGen = {
-    (
-        data: ElemInfo<"attr">,
-        ctxGen: (data: ElemInfo<"children">) => ElemCtx<"children">,
-    ): {
-        (): ElemInfo<"attr">
-        (str: TemplateStringsArray): ElemCtx<"children">
-    }
-
-    (
-        data: ElemInfo<"children">,
-        ctxGen: (data: ElemInfo<"children">) => ElemCtx<"children">,
-    ): {
-        (): ElemInfo<"children">
-        (str: TemplateStringsArray): ElemCtx<"children">
-    }
-}
-
 export const elemGen = ctxGenGen<
     ElemInfo<"attr">,
     ElemEval<"attr">,
-    ElemCtx<"attr">,
-    ElemEvalGen
+    ElemCtx<"attr">
 >({
     addAttribute:
     (k, v) =>
