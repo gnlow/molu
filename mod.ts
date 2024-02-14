@@ -12,7 +12,7 @@ const ctxGenGen =
     } & Eval
 >
 (impl: Elem<Data, Eval>) => {
-    const f = (data: Data): MyCtx =>
+    const f = (data: Data) =>
         new Proxy(
             impl.eval(data),
             {
@@ -35,7 +35,7 @@ type ElemCtx<V extends string = ""> = {
 
 const elemGen = ctxGenGen<
     ElemInfo,
-    () => ElemInfo,
+    { (): ElemInfo },
     ElemCtx
 >({
     addAttribute:
