@@ -1,42 +1,55 @@
-interface Elem<Data, Eval extends (...args: any) => any> {
+interface Elem<
+    Data,
+    Eval extends (...args: any) => any,
+    Ctx extends {
+        [k: string]: (...args: any) => any
+    } & Eval
+> {
     addAttribute(key: string | symbol, val: string): (data: Data) => Data
-    eval: (data: Data) => Eval
+    eval: (data: Data, ctxGen: () => Ctx) => Eval
 }
 
 const ctxGenGen =
 <
     Data,
     Eval extends (...args: any) => any,
-    MyCtx extends {
+    Ctx extends {
         [k: string]: (...args: any) => any
     } & Eval
 >
-(impl: Elem<Data, Eval>) => {
-    const f = (data: Data) =>
+(impl: Elem<Data, Eval, Ctx>) => {
+    const ctxGen = (data: Data): Ctx =>
         new Proxy(
-            impl.eval(data),
+            impl.eval(data, () => ctxGen(data)),
             {
                 get(_target, prop, _reciever) {
-                    return ([val]: TemplateStringsArray) => f(
+                    return ([val]: TemplateStringsArray) => ctxGen(
                         impl.addAttribute(prop, val)(data)
                     )
                 }
             },
-        ) as unknown as MyCtx
-    return f
+        ) as unknown as Ctx
+    return ctxGen
 }
+
+const STATE = Symbol("state")
 
 type ElemInfo = Record<string, string>
 
-type ElemCtx<State extends "attr" | "children" = "attr"> = {
-    (): ElemInfo
+type ElemEval<State extends "attr" | "children" = "attr"> = {
+    (): ElemInfo & {
+        [STATE]: State
+    }
     (str: TemplateStringsArray): ElemCtx<"children">
-    [k: string]: (str: TemplateStringsArray) => ElemCtx<State>
 }
+
+type ElemCtx<State extends "attr" | "children" = "attr"> = {
+    [k: string]: (str: TemplateStringsArray) => ElemCtx<State>
+} & ElemEval
 
 const elemGen = ctxGenGen<
     ElemInfo,
-    { (): ElemInfo },
+    ElemEval,
     ElemCtx
 >({
     addAttribute:
@@ -45,7 +58,10 @@ const elemGen = ctxGenGen<
         ...data,
         [k]: v,
     }),
-    eval: data => () => data,
+    eval: (data, ctxGen) => ((arg: undefined | TemplateStringsArray) => {
+        if (!arg) return data
+        return ctxGen() as ElemCtx<"children">
+    }) as ElemEval,
 })
 
 export const div = elemGen({})
