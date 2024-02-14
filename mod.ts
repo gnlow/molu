@@ -28,9 +28,10 @@ const ctxGenGen =
 
 type ElemInfo = Record<string, string>
 
-type ElemCtx<V extends string = ""> = {
+type ElemCtx<State extends "attr" | "children" = "attr"> = {
     (): ElemInfo
-    [k: string]: (str: TemplateStringsArray) => ElemCtx<`${V}v`>
+    (str: TemplateStringsArray): ElemCtx<"children">
+    [k: string]: (str: TemplateStringsArray) => ElemCtx<State>
 }
 
 const elemGen = ctxGenGen<
