@@ -1,24 +1,43 @@
 import { ctxGenGen } from "./ctxGenGen.ts"
 
-const STATE = Symbol("state")
+export const STATE = Symbol("state")
 
-type ElemInfo = Record<string, string>
+type ElemInfo<State extends "attr" | "children"> = Record<string, string> & {
+    [STATE]: State
+}
 
-type ElemEval<State extends "attr" | "children" = "attr"> = {
-    (): ElemInfo & {
-        [STATE]: State
-    }
+type ElemEval<State extends "attr" | "children"> = {
+    (): ElemInfo<State>
     (str: TemplateStringsArray): ElemCtx<"children">
 }
 
-type ElemCtx<State extends "attr" | "children" = "attr"> = {
+type ElemCtx<State extends "attr" | "children"> = {
     [k: string]: (str: TemplateStringsArray) => ElemCtx<State>
-} & ElemEval
+} & ElemEval<State>
+
+type ElemEvalGen = {
+    (
+        data: ElemInfo<"attr">,
+        ctxGen: () => ElemCtx<"attr">,
+    ): {
+        (): ElemInfo<"attr">
+        (str: TemplateStringsArray): ElemCtx<"children">
+    }
+
+    (
+        data: ElemInfo<"children">,
+        ctxGen: () => ElemCtx<"children">,
+    ): {
+        (): ElemInfo<"children">
+        (str: TemplateStringsArray): ElemCtx<"children">
+    }
+}
 
 export const elemGen = ctxGenGen<
-    ElemInfo,
-    ElemEval,
-    ElemCtx
+    ElemInfo<"attr">,
+    ElemEval<"attr">,
+    ElemCtx<"attr">,
+    ElemEvalGen
 >({
     addAttribute:
     (k, v) =>
@@ -26,8 +45,8 @@ export const elemGen = ctxGenGen<
         ...data,
         [k]: v,
     }),
-    eval: (data, ctxGen) => ((arg: undefined | TemplateStringsArray) => {
+    evalGen: ((data, ctxGen) => (arg: undefined | TemplateStringsArray) => {
         if (!arg) return data
         return ctxGen() as ElemCtx<"children">
-    }) as ElemEval,
+    }) as ElemEvalGen,
 })

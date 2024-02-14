@@ -3,10 +3,11 @@ interface Elem<
     Eval extends (...args: any) => any,
     Ctx extends {
         [k: string]: (...args: any) => any
-    } & Eval
+    } & Eval,
+    EvalGen extends (data: Data, ctxGen: () => Ctx) => Eval
 > {
     addAttribute(key: string | symbol, val: string): (data: Data) => Data
-    eval: (data: Data, ctxGen: () => Ctx) => Eval
+    evalGen: EvalGen
 }
 
 export const ctxGenGen =
@@ -15,12 +16,13 @@ export const ctxGenGen =
     Eval extends (...args: any) => any,
     Ctx extends {
         [k: string]: (...args: any) => any
-    } & Eval
+    } & Eval,
+    EvalGen extends (data: Data, ctxGen: () => Ctx) => Eval
 >
-(impl: Elem<Data, Eval, Ctx>) => {
+(impl: Elem<Data, Eval, Ctx, EvalGen>) => {
     const ctxGen = (data: Data): Ctx =>
         new Proxy(
-            impl.eval(data, () => ctxGen(data)),
+            impl.evalGen(data, () => ctxGen(data)),
             {
                 get(_target, prop, _reciever) {
                     return ([val]: TemplateStringsArray) => ctxGen(
