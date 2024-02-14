@@ -7,7 +7,7 @@ type ElemInfo<State extends "attr" | "children"> = Record<string, string> & {
 }
 
 type ElemEval<State extends "attr" | "children"> = {
-    (): ElemInfo<State>
+    (): HTMLElement
     (str: TemplateStringsArray): ElemCtx<"children">
 }
 
@@ -31,8 +31,16 @@ export const elemGen = ctxGenGen<
         (
             data: ElemInfo<State>,
             ctxGen: (newData: ElemInfo<"children">) => ElemCtx<"children">,
-        ) => ((arg: undefined | TemplateStringsArray) => {
-            if (!arg) return data
+        ) => ((arg?: TemplateStringsArray) => {
+            if (!arg) {
+                const el = document.createElement("div")
+                Object.entries(data).forEach(([k, v]) => {
+                    if (typeof k == "string") {
+                        el.setAttribute(k, v)
+                    }
+                })
+                return el
+            }
             return ctxGen({
                 ...data,
                 [STATE]: "children",
