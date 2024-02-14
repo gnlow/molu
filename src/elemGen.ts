@@ -1,9 +1,9 @@
 import { ctxGenGen } from "./ctxGenGen.ts"
 
-export const STATE = Symbol("state")
-
-type ElemInfo<State extends "attr" | "children"> = Record<string, string> & {
-    [STATE]: State
+type ElemInfo<State extends "attr" | "children"> = {
+    state: State
+    attributes: Record<string, string>
+    children: (string | Node)[]
 }
 
 type ElemEval<State extends "attr" | "children"> = {
@@ -24,7 +24,10 @@ export const elemGen = ctxGenGen<
     (k, v) =>
     data => ({
         ...data,
-        [k]: v,
+        attributes: {
+            ...data.attributes,
+            [k]: v,
+        },
     }),
     evalGen:
         <State extends "attr" | "children">
@@ -33,17 +36,28 @@ export const elemGen = ctxGenGen<
             ctxGen: (newData: ElemInfo<"children">) => ElemCtx<"children">,
         ) => ((arg?: TemplateStringsArray) => {
             if (!arg) {
+                console.log(data)
                 const el = document.createElement("div")
-                Object.entries(data).forEach(([k, v]) => {
+
+                Object.entries(data.attributes).forEach(([k, v]) => {
                     if (typeof k == "string") {
                         el.setAttribute(k, v)
                     }
                 })
+
+                el.append(...data.children)
+
                 return el
+            } else {
+                const [str] = arg
+                return ctxGen({
+                    ...data,
+                    state: "children",
+                    children: [
+                        ...data.children,
+                        str,
+                    ]
+                })
             }
-            return ctxGen({
-                ...data,
-                [STATE]: "children",
-            })
         }) as ElemEval<State>,
 })

@@ -1,3 +1,7 @@
-import { elemGen, STATE } from "./src/elemGen.ts"
+import { elemGen } from "./src/elemGen.ts"
 
-export const div = elemGen({ [STATE]: "attr" })
+export const div = elemGen({
+    state: "attr",
+    attributes: {},
+    children: [],
+})
