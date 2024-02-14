@@ -18,7 +18,7 @@ type ElemCtx<State extends "attr" | "children"> = {
 type ElemEvalGen = {
     (
         data: ElemInfo<"attr">,
-        ctxGen: () => ElemCtx<"attr">,
+        ctxGen: (data: ElemInfo<"children">) => ElemCtx<"children">,
     ): {
         (): ElemInfo<"attr">
         (str: TemplateStringsArray): ElemCtx<"children">
@@ -26,7 +26,7 @@ type ElemEvalGen = {
 
     (
         data: ElemInfo<"children">,
-        ctxGen: () => ElemCtx<"children">,
+        ctxGen: (data: ElemInfo<"children">) => ElemCtx<"children">,
     ): {
         (): ElemInfo<"children">
         (str: TemplateStringsArray): ElemCtx<"children">
@@ -45,8 +45,16 @@ export const elemGen = ctxGenGen<
         ...data,
         [k]: v,
     }),
-    evalGen: ((data, ctxGen) => (arg: undefined | TemplateStringsArray) => {
-        if (!arg) return data
-        return ctxGen() as ElemCtx<"children">
-    }) as ElemEvalGen,
+    evalGen:
+        <State extends "attr" | "children">
+        (
+            data: ElemInfo<State>,
+            ctxGen: (newData: ElemInfo<"children">) => ElemCtx<"children">,
+        ) => ((arg: undefined | TemplateStringsArray) => {
+            if (!arg) return data
+            return ctxGen({
+                ...data,
+                [STATE]: "children",
+            })
+        }) as ElemEval<State>,
 })
